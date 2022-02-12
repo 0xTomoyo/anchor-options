@@ -25,7 +25,7 @@ pub struct InitializeOption<'info> {
         init,
         payer = payer,
     )]
-    pub market: Account<'info, OptionMarket>,
+    pub market: Box<Account<'info, OptionMarket>>,
 
     /// PDA which has authority over all assets in the market
     #[account(

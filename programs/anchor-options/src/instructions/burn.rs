@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token,
-    token::{Mint, MintTo, Token, TokenAccount, Transfer},
+    token::{Burn, Mint, Token, TokenAccount, Transfer},
 };
 
 use crate::errors::ErrorCode;
@@ -9,7 +9,7 @@ use crate::math::*;
 use crate::state::*;
 
 #[event]
-pub struct MintEvent {
+pub struct BurnEvent {
     market: Pubkey,
     depositor: Pubkey,
     short_note_account: Pubkey,
@@ -19,8 +19,8 @@ pub struct MintEvent {
 }
 
 #[derive(Accounts)]
-#[instruction(collateral: u64)]
-pub struct MintOptions<'info> {
+#[instruction(options: u64)]
+pub struct BurnOptions<'info> {
     /// Option account
     pub market: Box<Account<'info, OptionMarket>>,
 
@@ -72,8 +72,8 @@ pub struct MintOptions<'info> {
     /// The token account to receive the long option notes
     pub long_note_account: Account<'info, TokenAccount>,
 
-    /// The token account with the collateral to be deposited
-    pub deposit_source: Account<'info, TokenAccount>,
+    /// The token account where to transfer withdrawn collateral to
+    pub withdraw_account: Account<'info, TokenAccount>,
 
     /// Signer
     pub depositor: Signer<'info>,
@@ -82,22 +82,22 @@ pub struct MintOptions<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> MintOptions<'info> {
+impl<'info> BurnOptions<'info> {
     fn transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
             Transfer {
-                from: self.deposit_source.to_account_info(),
-                to: self.vault.to_account_info(),
-                authority: self.depositor.to_account_info(),
+                from: self.vault.to_account_info(),
+                to: self.depositor.to_account_info(),
+                authority: self.market_authority.to_account_info(),
             },
         )
     }
 
-    fn short_note_mint_context(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+    fn short_note_burn_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
-            MintTo {
+            Burn {
                 to: self.short_note_account.to_account_info(),
                 mint: self.short_note_mint.to_account_info(),
                 authority: self.market_authority.to_account_info(),
@@ -105,10 +105,10 @@ impl<'info> MintOptions<'info> {
         )
     }
 
-    fn long_note_mint_context(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+    fn long_note_burn_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
-            MintTo {
+            Burn {
                 to: self.long_note_account.to_account_info(),
                 mint: self.long_note_mint.to_account_info(),
                 authority: self.market_authority.to_account_info(),
@@ -117,8 +117,8 @@ impl<'info> MintOptions<'info> {
     }
 }
 
-/// Deposit collateral and mint options
-pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
+/// Burn long and short options to withdraw collateral
+pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
     let oracle_data = ctx.accounts.pyth_oracle_price.try_borrow_data()?;
 
     let oracle = match pyth_client::load_price(&oracle_data) {
@@ -130,8 +130,8 @@ pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
         Some(val) => val,
     };
 
-    let options = calculate_option_amount(
-        collateral,
+    let collateral = calculate_collateral_amount(
+        options,
         ctx.accounts.market.strike_price,
         ctx.accounts.market.is_put,
         ctx.accounts.collateral_mint.decimals,
@@ -148,17 +148,17 @@ pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
         &[ctx.accounts.market.bumps.market_authority],
     ];
 
-    token::mint_to(
-        ctx.accounts.short_note_mint_context().with_signer(&[seeds]),
+    token::burn(
+        ctx.accounts.short_note_burn_context().with_signer(&[seeds]),
         options,
     )?;
 
-    token::mint_to(
-        ctx.accounts.long_note_mint_context().with_signer(&[seeds]),
+    token::burn(
+        ctx.accounts.long_note_burn_context().with_signer(&[seeds]),
         options,
     )?;
 
-    emit!(MintEvent {
+    emit!(BurnEvent {
         collateral,
         options,
         market: ctx.accounts.market.key(),
