@@ -21,10 +21,15 @@ pub struct InitializeOption<'info> {
     #[account(
         init,
         payer = payer,
-        seeds = [b"market"],
-        bump,
     )]
     pub market: Account<'info, OptionMarket>,
+
+    /// PDA which has authority over all assets in the market
+    #[account(
+        seeds = [b"market_authority", market.key().as_ref()],
+        bump,
+    )]
+    pub market_authority: AccountInfo<'info>,
 
     /// Mint account for the base token
     pub base_mint: Account<'info, Mint>,
@@ -42,7 +47,7 @@ pub struct InitializeOption<'info> {
         seeds = [b"short_note_mint", market.key().as_ref()],
         bump,
         mint::decimals = base_mint.decimals,
-        mint::authority = market,
+        mint::authority = market_authority,
     )]
     pub short_note_mint: Account<'info, Mint>,
 
@@ -53,7 +58,7 @@ pub struct InitializeOption<'info> {
         seeds = [b"long_note_mint", market.key().as_ref()],
         bump,
         mint::decimals = base_mint.decimals,
-        mint::authority = market,
+        mint::authority = market_authority,
     )]
     pub long_note_mint: Account<'info, Mint>,
 
@@ -64,7 +69,7 @@ pub struct InitializeOption<'info> {
         seeds = [b"vault", market.key().as_ref()],
         bump,
         token::mint = collateral_mint,
-        token::authority = market
+        token::authority = market_authority
     )]
     pub vault: Account<'info, TokenAccount>,
 
@@ -104,20 +109,21 @@ pub fn handler(
         Ok(val) => val,
         Err(_) => return Err(ErrorCode::PythError.into()),
     };
-    if crate::utils::read_pyth_product_attribute(&product.attr, b"quote_currency").is_none() {
+    if read_pyth_product_attribute(&product.attr, b"quote_currency").is_none() {
         return Err(ErrorCode::InvalidProduct.into());
     }
     if product.px_acc.val[..] != ctx.accounts.pyth_oracle_price.key().to_bytes() {
         return Err(ErrorCode::InvalidOracle.into());
     }
 
+    ctx.accounts.market.market_authority = ctx.accounts.market_authority.key();
     ctx.accounts.market.base_mint = ctx.accounts.base_mint.key();
     ctx.accounts.market.collateral_mint = ctx.accounts.collateral_mint.key();
     ctx.accounts.market.short_note_mint = ctx.accounts.short_note_mint.key();
     ctx.accounts.market.long_note_mint = ctx.accounts.long_note_mint.key();
     ctx.accounts.market.vault = ctx.accounts.vault.key();
     ctx.accounts.market.bumps = OptionBumps {
-        market: *ctx.bumps.get("market").unwrap(),
+        market_authority: *ctx.bumps.get("market_authority").unwrap(),
         short_note_mint: *ctx.bumps.get("short_note_mint").unwrap(),
         long_note_mint: *ctx.bumps.get("long_note_mint").unwrap(),
         vault: *ctx.bumps.get("vault").unwrap(),
@@ -138,4 +144,32 @@ pub fn handler(
     });
 
     Ok(())
+}
+
+fn read_pyth_product_attribute<'d>(data: &'d [u8], attribute: &[u8]) -> Option<&'d [u8]> {
+    let mut idx = 0;
+
+    while idx < data.len() {
+        let key_len = data[idx] as usize;
+        idx += 1;
+
+        if key_len == 0 {
+            continue;
+        }
+
+        let key = &data[idx..idx + key_len];
+        idx += key_len;
+
+        let val_len = data[idx] as usize;
+        idx += 1;
+
+        let value = &data[idx..idx + val_len];
+        idx += val_len;
+
+        if key == attribute {
+            return Some(value);
+        }
+    }
+
+    None
 }

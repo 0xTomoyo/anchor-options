@@ -4,6 +4,9 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct OptionMarket {
+    /// PDA which has authority over all assets in the market
+    pub market_authority: Pubkey,
+
     /// The mint for the base token
     pub base_mint: Pubkey,
 
@@ -37,7 +40,7 @@ pub struct OptionMarket {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct OptionBumps {
-    pub market: u8,
+    pub market_authority: u8,
     pub short_note_mint: u8,
     pub long_note_mint: u8,
     pub vault: u8,

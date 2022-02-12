@@ -13,4 +13,7 @@ pub enum ErrorCode {
 
     #[msg("Invalid Oracle")]
     InvalidOracle,
+
+    #[msg("Price Error")]
+    PriceError,
 }
