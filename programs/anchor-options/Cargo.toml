@@ -19,3 +19,5 @@ default = []
 anchor-lang = "0.21.0"
 anchor-spl = {version = "0.21.0"}
 spl-token = {version = "3.3.0", features = ["no-entrypoint"]}
+num-traits = "0.2.14"
+num-derive = "0.3.3"
