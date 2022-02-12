@@ -34,31 +34,31 @@ pub struct MintOptions<'info> {
     #[account(
         constraint = market.base_mint == base_mint.key()
     )]
-    pub base_mint: Account<'info, Mint>,
+    pub base_mint: Box<Account<'info, Mint>>,
 
     /// Mint account for the collateral token (should be same as base_mint if the option is a call)
     #[account(
         constraint = market.collateral_mint == collateral_mint.key()
     )]
-    pub collateral_mint: Account<'info, Mint>,
+    pub collateral_mint: Box<Account<'info, Mint>>,
 
     /// Mint account for notes that represent a short option
     #[account(
         constraint = market.short_note_mint == short_note_mint.key()
     )]
-    pub short_note_mint: Account<'info, Mint>,
+    pub short_note_mint: Box<Account<'info, Mint>>,
 
     /// Mint account for notes that represent a long option
     #[account(
         constraint = market.long_note_mint == long_note_mint.key()
     )]
-    pub long_note_mint: Account<'info, Mint>,
+    pub long_note_mint: Box<Account<'info, Mint>>,
 
     /// Vault with custody over the collateral tokens
     #[account(
         constraint = market.vault == vault.key()
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: Box<Account<'info, TokenAccount>>,
 
     /// The account where a Pyth oracle keeps the updated price of the token
     #[account(
@@ -67,13 +67,13 @@ pub struct MintOptions<'info> {
     pub pyth_oracle_price: AccountInfo<'info>,
 
     /// The token account to receive the short option notes
-    pub short_note_account: Account<'info, TokenAccount>,
+    pub short_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account to receive the long option notes
-    pub long_note_account: Account<'info, TokenAccount>,
+    pub long_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account with the collateral to be deposited
-    pub deposit_source: Account<'info, TokenAccount>,
+    pub deposit_source: Box<Account<'info, TokenAccount>>,
 
     /// Signer
     pub depositor: Signer<'info>,

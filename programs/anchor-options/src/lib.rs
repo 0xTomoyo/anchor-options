@@ -22,4 +22,14 @@ pub mod anchor_options {
     ) -> ProgramResult {
         instructions::init_option::handler(ctx, strike_price, expiry_timestamp, is_put)
     }
+
+    /// Deposit collateral and mint options
+    pub fn mint(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
+        instructions::mint::handler(ctx, collateral)
+    }
+
+    /// Burn long and short options to withdraw collateral
+    pub fn burn(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
+        instructions::burn::handler(ctx, options)
+    }
 }

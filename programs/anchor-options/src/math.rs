@@ -37,3 +37,20 @@ pub fn calculate_collateral_amount(
         return options;
     }
 }
+
+pub fn calculate_expired_value(
+    options: u64,
+    strike_price: u64,
+    is_put: bool,
+    expiry_price: u64,
+) -> (u64, bool) {
+    if is_put && (strike_price > expiry_price) {
+        let payout = (strike_price - expiry_price) * options;
+        return (payout, true);
+    } else if !is_put && (expiry_price > strike_price) {
+        let payout = ((expiry_price - strike_price) * options) / expiry_price;
+        return (payout, true);
+    } else {
+        return (0, false);
+    }
+}
