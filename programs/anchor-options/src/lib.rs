@@ -19,13 +19,17 @@ pub mod anchor_options {
             return Err(ErrorCode::OptionExpired.into());
         }
 
+        // Validate pyth oracle
         let product_data = ctx.accounts.pyth_oracle_product.try_borrow_data()?;
-        let product = pyth_client::load_product(&product_data);
-        if product.is_err()
-            || crate::utils::read_pyth_product_attribute(&product?.attr, b"quote_currency")
-                .is_none()
-        {
-            return Err(ErrorCode::OptionExpired.into());
+        let product = match pyth_client::load_product(&product_data) {
+            Ok(val) => val,
+            Err(_) => return Err(ErrorCode::PythError.into()),
+        };
+        if crate::utils::read_pyth_product_attribute(&product.attr, b"quote_currency").is_none() {
+            return Err(ErrorCode::InvalidProduct.into());
+        }
+        if product.px_acc.val[..] != ctx.accounts.pyth_oracle_price.key().to_bytes() {
+            return Err(ErrorCode::InvalidOracle.into());
         }
 
         ctx.accounts.market.collateral_mint = ctx.accounts.collateral_mint.key();
@@ -148,8 +152,14 @@ pub struct OptionMarket {
 
 #[error]
 pub enum ErrorCode {
-    #[msg("Option has expired")]
+    #[msg("Option Expired")]
     OptionExpired,
+    #[msg("Pyth Error")]
+    PythError,
+    #[msg("Invalid Product")]
+    InvalidProduct,
+    #[msg("Invalid Oracle")]
+    InvalidOracle,
 }
 
 #[event]
