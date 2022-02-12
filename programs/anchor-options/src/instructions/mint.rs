@@ -8,6 +8,16 @@ use crate::errors::ErrorCode;
 use crate::math::*;
 use crate::state::*;
 
+#[event]
+pub struct MintEvent {
+    market: Pubkey,
+    depositor: Pubkey,
+    short_note_account: Pubkey,
+    long_note_account: Pubkey,
+    collateral: u64,
+    options: u64,
+}
+
 #[derive(Accounts)]
 #[instruction(collateral: u64)]
 pub struct MintOptions<'info> {
@@ -131,23 +141,31 @@ pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
 
     token::transfer(ctx.accounts.transfer_context(), collateral)?;
 
-    let market_authority = ctx.accounts.market_authority.key();
+    let market = ctx.accounts.market.key();
+    let seeds = &[
+        b"market_authority",
+        market.as_ref(),
+        &[ctx.accounts.market.bumps.market_authority],
+    ];
 
     token::mint_to(
-        ctx.accounts.short_note_mint_context().with_signer(&[&[
-            market_authority.as_ref(),
-            &[ctx.accounts.market.bumps.market_authority],
-        ]]),
+        ctx.accounts.short_note_mint_context().with_signer(&[seeds]),
         options,
     )?;
 
     token::mint_to(
-        ctx.accounts.long_note_mint_context().with_signer(&[&[
-            market_authority.as_ref(),
-            &[ctx.accounts.market.bumps.market_authority],
-        ]]),
+        ctx.accounts.long_note_mint_context().with_signer(&[seeds]),
         options,
     )?;
+
+    emit!(MintEvent {
+        collateral,
+        options,
+        market: ctx.accounts.market.key(),
+        depositor: ctx.accounts.depositor.key(),
+        short_note_account: ctx.accounts.short_note_account.key(),
+        long_note_account: ctx.accounts.long_note_account.key(),
+    });
 
     Ok(())
 }

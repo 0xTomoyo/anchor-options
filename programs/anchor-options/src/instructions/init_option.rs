@@ -6,8 +6,11 @@ use crate::state::*;
 
 #[event]
 pub struct OptionEvent {
+    market: Pubkey,
     base_mint: Pubkey,
     collateral_mint: Pubkey,
+    short_note_mint: Pubkey,
+    long_note_mint: Pubkey,
     pyth_oracle_price: Pubkey,
     strike_price: u64,
     expiry_timestamp: i64,
@@ -138,8 +141,11 @@ pub fn handler(
         strike_price,
         expiry_timestamp,
         is_put,
+        market: ctx.accounts.market.key(),
         base_mint: ctx.accounts.base_mint.key(),
         collateral_mint: ctx.accounts.collateral_mint.key(),
+        short_note_mint: ctx.accounts.short_note_mint.key(),
+        long_note_mint: ctx.accounts.long_note_mint.key(),
         pyth_oracle_price: ctx.accounts.pyth_oracle_price.key(),
     });
 
