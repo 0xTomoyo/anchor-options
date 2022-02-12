@@ -13,6 +13,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod anchor_options {
     use super::*;
 
+    /// Initialize a new option
     pub fn init_option(
         ctx: Context<InitializeOption>,
         strike_price: u64,

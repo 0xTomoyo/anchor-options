@@ -1,16 +1,16 @@
 use anchor_lang::prelude::*;
 
-/// Option market account
+/// Option account
 #[account]
 #[derive(Default)]
 pub struct OptionMarket {
     /// The mint for the token used as collateral
     pub collateral_mint: Pubkey,
 
-    /// The mint for this market's deposit notes, represents a short option
+    /// The mint for this option's deposit notes, represents a short option
     pub short_note_mint: Pubkey,
 
-    /// The mint for this market's option tokens, represents a long option
+    /// The mint for this option's option tokens, represents a long option
     pub long_note_mint: Pubkey,
 
     /// The account with custody over the collateral tokens
