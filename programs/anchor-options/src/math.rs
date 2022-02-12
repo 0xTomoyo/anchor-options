@@ -1,3 +1,4 @@
+// Calculate the amount of options mintable given the margin
 pub fn calculate_option_amount(
     collateral: u64,
     strike_price: u64,
@@ -18,6 +19,7 @@ pub fn calculate_option_amount(
     }
 }
 
+// Calculate the amount of margin required to mint options
 pub fn calculate_collateral_amount(
     options: u64,
     strike_price: u64,
@@ -38,6 +40,7 @@ pub fn calculate_collateral_amount(
     }
 }
 
+// Calculate the payout of an expired option
 pub fn calculate_expired_value(
     options: u64,
     strike_price: u64,
