@@ -134,6 +134,7 @@ pub fn handler(
 
     ctx.accounts.market.pyth_oracle_price = ctx.accounts.pyth_oracle_price.key();
     ctx.accounts.market.strike_price = strike_price;
+    ctx.accounts.market.expiry_price = 0;
     ctx.accounts.market.expiry_timestamp = expiry_timestamp;
     ctx.accounts.market.is_put = is_put;
 

@@ -31,6 +31,9 @@ pub struct OptionMarket {
     /// Strike price, must be in the same decimals as the Pyth oracle
     pub strike_price: u64,
 
+    /// Expiry price, must be in the same decimals as the Pyth oracle
+    pub expiry_price: u64,
+
     /// Expiry timestamp
     pub expiry_timestamp: i64,
 

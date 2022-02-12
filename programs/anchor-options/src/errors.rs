@@ -16,4 +16,7 @@ pub enum ErrorCode {
 
     #[msg("Price Error")]
     PriceError,
+
+    #[msg("Option Not Expired")]
+    OptionNotExpired,
 }
