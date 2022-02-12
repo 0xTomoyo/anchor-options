@@ -118,7 +118,7 @@ impl<'info> BurnOptions<'info> {
     }
 }
 
-/// Burn long and short options to withdraw collateral
+/// Burn long and short options to withdraw collateral before expiry
 pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
     if ctx.accounts.market.expiry_timestamp <= Clock::get()?.unix_timestamp {
         return Err(ErrorCode::OptionExpired.into());

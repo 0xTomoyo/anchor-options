@@ -21,7 +21,7 @@ pub struct WithdrawEvent {
 
 #[derive(Accounts)]
 #[instruction(options: u64)]
-pub struct WithdrawOptions<'info> {
+pub struct WithdrawCollateral<'info> {
     /// Option account
     pub market: Box<Account<'info, OptionMarket>>,
 
@@ -49,12 +49,6 @@ pub struct WithdrawOptions<'info> {
     )]
     pub short_note_mint: Box<Account<'info, Mint>>,
 
-    /// Mint account for notes that represent a long option
-    #[account(
-        constraint = market.long_note_mint == long_note_mint.key()
-    )]
-    pub long_note_mint: Box<Account<'info, Mint>>,
-
     /// Vault with custody over the collateral tokens
     #[account(
         constraint = market.vault == vault.key()
@@ -70,9 +64,6 @@ pub struct WithdrawOptions<'info> {
     /// The token account to receive the short option notes
     pub short_note_account: Box<Account<'info, TokenAccount>>,
 
-    /// The token account to receive the long option notes
-    pub long_note_account: Box<Account<'info, TokenAccount>>,
-
     /// The token account where to transfer withdrawn collateral to
     pub withdraw_account: Box<Account<'info, TokenAccount>>,
 
@@ -83,7 +74,7 @@ pub struct WithdrawOptions<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawOptions<'info> {
+impl<'info> WithdrawCollateral<'info> {
     fn transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
@@ -107,8 +98,8 @@ impl<'info> WithdrawOptions<'info> {
     }
 }
 
-/// Burn long and short options to withdraw collateral
-pub fn handler(ctx: Context<WithdrawOptions>, options: u64) -> ProgramResult {
+/// Withdraw collateral after expiry and incur any losses if the options expired in the money
+pub fn handler(ctx: Context<WithdrawCollateral>, options: u64) -> ProgramResult {
     if ctx.accounts.market.expiry_timestamp > Clock::get()?.unix_timestamp {
         return Err(ErrorCode::OptionNotExpired.into());
     }

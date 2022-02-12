@@ -28,7 +28,7 @@ pub mod anchor_options {
         instructions::mint::handler(ctx, collateral)
     }
 
-    /// Burn long and short options to withdraw collateral
+    /// Burn long and short options to withdraw collateral before expiry
     pub fn burn(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
         instructions::burn::handler(ctx, options)
     }
@@ -36,5 +36,15 @@ pub mod anchor_options {
     /// Settles an option by recording the expiry price
     pub fn settle(ctx: Context<SettleOption>) -> ProgramResult {
         instructions::settle::handler(ctx)
+    }
+
+    /// Claim profits from an option after expiry
+    pub fn redeem(ctx: Context<RedeemOptions>, options: u64) -> ProgramResult {
+        instructions::redeem::handler(ctx, options)
+    }
+
+    /// Withdraw collateral after expiry and incur any losses if the options expired in the money
+    pub fn withdraw(ctx: Context<WithdrawCollateral>, options: u64) -> ProgramResult {
+        instructions::withdraw::handler(ctx, options)
     }
 }

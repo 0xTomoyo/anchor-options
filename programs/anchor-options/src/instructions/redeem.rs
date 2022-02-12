@@ -43,12 +43,6 @@ pub struct RedeemOptions<'info> {
     )]
     pub collateral_mint: Box<Account<'info, Mint>>,
 
-    /// Mint account for notes that represent a short option
-    #[account(
-        constraint = market.short_note_mint == short_note_mint.key()
-    )]
-    pub short_note_mint: Box<Account<'info, Mint>>,
-
     /// Mint account for notes that represent a long option
     #[account(
         constraint = market.long_note_mint == long_note_mint.key()
@@ -66,9 +60,6 @@ pub struct RedeemOptions<'info> {
         constraint = market.pyth_oracle_price == pyth_oracle_price.key()
     )]
     pub pyth_oracle_price: AccountInfo<'info>,
-
-    /// The token account to receive the short option notes
-    pub short_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account to receive the long option notes
     pub long_note_account: Box<Account<'info, TokenAccount>>,
@@ -107,7 +98,7 @@ impl<'info> RedeemOptions<'info> {
     }
 }
 
-/// Burn long and short options to withdraw collateral
+/// Claim profits from an option after expiry
 pub fn handler(ctx: Context<RedeemOptions>, options: u64) -> ProgramResult {
     if ctx.accounts.market.expiry_timestamp > Clock::get()?.unix_timestamp {
         return Err(ErrorCode::OptionNotExpired.into());
