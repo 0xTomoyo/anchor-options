@@ -41,12 +41,20 @@ pub fn calculate_collateral_amount(
 pub fn calculate_expired_value(
     options: u64,
     strike_price: u64,
-    is_put: bool,
     expiry_price: u64,
+    is_put: bool,
+    collateral_decimals: u8,
+    base_decimals: u8,
+    pyth_exponent: i32,
 ) -> (u64, bool) {
     if is_put && (strike_price > expiry_price) {
+        let decimals = (base_decimals as i32) + pyth_exponent - (collateral_decimals as i32);
         let payout = (strike_price - expiry_price) * options;
-        return (payout, true);
+        if decimals >= 0 {
+            return (payout / (10 as u64).pow(decimals.abs() as u32), true);
+        } else {
+            return (payout * (10 as u64).pow(decimals.abs() as u32), true);
+        }
     } else if !is_put && (expiry_price > strike_price) {
         let payout = ((expiry_price - strike_price) * options) / expiry_price;
         return (payout, true);
