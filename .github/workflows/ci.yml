@@ -1,0 +1,32 @@
+name: CI
+
+on: push
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - id: cache-cli-deps
+        uses: actions/cache@v2
+        with:
+          key: cargo-${{ runner.os }}
+          path: |
+            ~/.local/share/solana
+            ~/.cargo/bin/anchor
+      - id: install-os-deps
+        if: steps.cache-cli-deps.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev
+      - name: install-solana-tools
+        if: steps.cache-cli-deps.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL https://release.solana.com/v1.9.5/install)"
+      - run: echo "PATH=$HOME/.local/share/solana/install/active_release/bin:$PATH" >> $GITHUB_ENV
+      - id: install-anchor-cli
+        if: steps.cache-cli-deps.outputs.cache-hit != 'true'
+        run: cargo install --git https://github.com/project-serum/anchor --tag v0.21.0 anchor-cli --locked
+      - run: yarn install
+      - run: solana-keygen new --no-bip39-passphrase
+      - run: cargo test
+      - run: anchor build
+      - run: anchor test
