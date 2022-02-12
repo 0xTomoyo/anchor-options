@@ -26,16 +26,16 @@ pub struct InitializeOption<'info> {
     )]
     pub market: Account<'info, OptionMarket>,
 
-    // Mint account for the base token
+    /// Mint account for the base token
     pub base_mint: Account<'info, Mint>,
 
-    // Mint account for the collateral token (should be same as base_mint if the option is a call)
+    /// Mint account for the collateral token (should be same as base_mint if the option is a call)
     #[account(
         constraint = is_put || (base_mint.key() == collateral_mint.key())
     )]
     pub collateral_mint: Account<'info, Mint>,
 
-    // Mint account for notes that represent a short option
+    /// Mint account for notes that represent a short option
     #[account(
         init,
         payer = payer,
@@ -46,7 +46,7 @@ pub struct InitializeOption<'info> {
     )]
     pub short_note_mint: Account<'info, Mint>,
 
-    // Mint account for notes that represent a long option
+    /// Mint account for notes that represent a long option
     #[account(
         init,
         payer = payer,
@@ -57,7 +57,7 @@ pub struct InitializeOption<'info> {
     )]
     pub long_note_mint: Account<'info, Mint>,
 
-    // Vault with custody over the collateral tokens
+    /// Vault with custody over the collateral tokens
     #[account(
         init,
         payer = payer,
@@ -68,22 +68,22 @@ pub struct InitializeOption<'info> {
     )]
     pub vault: Account<'info, TokenAccount>,
 
-    // The account where a Pyth oracle keeps the updated price of the token
+    /// The account where a Pyth oracle keeps the updated price of the token
     pub pyth_oracle_price: AccountInfo<'info>,
 
-    // The account containing metadata about the Pyth oracle
+    /// The account containing metadata about the Pyth oracle
     pub pyth_oracle_product: AccountInfo<'info>,
 
-    // Signer
+    /// Signer
     pub payer: Signer<'info>,
 
-    // Rent
+    /// Rent
     pub rent: Sysvar<'info, Rent>,
 
-    // System program
+    /// System program
     pub system_program: Program<'info, System>,
 
-    // Token program
+    /// Token program
     pub token_program: Program<'info, Token>,
 }
 
@@ -111,6 +111,7 @@ pub fn handler(
         return Err(ErrorCode::InvalidOracle.into());
     }
 
+    ctx.accounts.market.base_mint = ctx.accounts.base_mint.key();
     ctx.accounts.market.collateral_mint = ctx.accounts.collateral_mint.key();
     ctx.accounts.market.short_note_mint = ctx.accounts.short_note_mint.key();
     ctx.accounts.market.long_note_mint = ctx.accounts.long_note_mint.key();

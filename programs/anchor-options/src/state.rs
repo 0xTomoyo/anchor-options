@@ -4,6 +4,9 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct OptionMarket {
+    /// The mint for the base token
+    pub base_mint: Pubkey,
+
     /// The mint for the token used as collateral
     pub collateral_mint: Pubkey,
 
