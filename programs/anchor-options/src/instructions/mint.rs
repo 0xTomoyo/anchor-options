@@ -119,6 +119,10 @@ impl<'info> MintOptions<'info> {
 
 /// Deposit collateral and mint options
 pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
+    if ctx.accounts.market.expiry_timestamp <= Clock::get()?.unix_timestamp {
+        return Err(ErrorCode::OptionExpired.into());
+    }
+
     let oracle_data = ctx.accounts.pyth_oracle_price.try_borrow_data()?;
 
     let oracle = match pyth_client::load_price(&oracle_data) {
