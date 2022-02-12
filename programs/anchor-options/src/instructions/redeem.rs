@@ -5,23 +5,23 @@ use anchor_spl::{
 };
 
 use crate::errors::ErrorCode;
+use crate::instructions::settle::SettleEvent;
 use crate::math::*;
 use crate::state::*;
 
 #[event]
-pub struct BurnEvent {
+pub struct RedeemEvent {
     market: Pubkey,
-    depositor: Pubkey,
-    withdraw_account: Pubkey,
-    short_note_account: Pubkey,
+    holder: Pubkey,
+    redeem_account: Pubkey,
     long_note_account: Pubkey,
-    collateral: u64,
+    payout: u64,
     options: u64,
 }
 
 #[derive(Accounts)]
 #[instruction(options: u64)]
-pub struct BurnOptions<'info> {
+pub struct RedeemOptions<'info> {
     /// Option account
     pub market: Box<Account<'info, OptionMarket>>,
 
@@ -74,33 +74,22 @@ pub struct BurnOptions<'info> {
     pub long_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account where to transfer withdrawn collateral to
-    pub withdraw_account: Box<Account<'info, TokenAccount>>,
+    pub redeem_account: Box<Account<'info, TokenAccount>>,
 
     /// Signer
-    pub depositor: Signer<'info>,
+    pub holder: Signer<'info>,
 
     /// Token program
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> BurnOptions<'info> {
+impl<'info> RedeemOptions<'info> {
     fn transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
             Transfer {
                 from: self.vault.to_account_info(),
-                to: self.withdraw_account.to_account_info(),
-                authority: self.market_authority.to_account_info(),
-            },
-        )
-    }
-
-    fn short_note_burn_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
-        CpiContext::new(
-            self.token_program.to_account_info(),
-            Burn {
-                to: self.short_note_account.to_account_info(),
-                mint: self.short_note_mint.to_account_info(),
+                to: self.redeem_account.to_account_info(),
                 authority: self.market_authority.to_account_info(),
             },
         )
@@ -119,9 +108,9 @@ impl<'info> BurnOptions<'info> {
 }
 
 /// Burn long and short options to withdraw collateral
-pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
-    if ctx.accounts.market.expiry_timestamp <= Clock::get()?.unix_timestamp {
-        return Err(ErrorCode::OptionExpired.into());
+pub fn handler(ctx: Context<RedeemOptions>, options: u64) -> ProgramResult {
+    if ctx.accounts.market.expiry_timestamp > Clock::get()?.unix_timestamp {
+        return Err(ErrorCode::OptionNotExpired.into());
     }
 
     let oracle_data = ctx.accounts.pyth_oracle_price.try_borrow_data()?;
@@ -135,16 +124,32 @@ pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
         Some(val) => val,
     };
 
-    let collateral = calculate_collateral_amount(
+    if ctx.accounts.market.expiry_price != 0 {
+        if price.price < 0 {
+            return Err(ErrorCode::PriceError.into());
+        }
+
+        ctx.accounts.market.expiry_price = price.price as u64;
+
+        emit!(SettleEvent {
+            market: ctx.accounts.market.key(),
+            expiry_price: price.price as u64,
+        });
+    }
+
+    let payout = calculate_expired_value(
         options,
         ctx.accounts.market.strike_price,
+        ctx.accounts.market.expiry_price,
         ctx.accounts.market.is_put,
         ctx.accounts.collateral_mint.decimals,
         ctx.accounts.base_mint.decimals,
         price.expo,
     );
 
-    token::transfer(ctx.accounts.transfer_context(), collateral)?;
+    if payout > 0 {
+        token::transfer(ctx.accounts.transfer_context(), payout)?;
+    }
 
     let market = ctx.accounts.market.key();
     let seeds = &[
@@ -154,22 +159,16 @@ pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
     ];
 
     token::burn(
-        ctx.accounts.short_note_burn_context().with_signer(&[seeds]),
-        options,
-    )?;
-
-    token::burn(
         ctx.accounts.long_note_burn_context().with_signer(&[seeds]),
         options,
     )?;
 
-    emit!(BurnEvent {
-        collateral,
+    emit!(RedeemEvent {
+        payout,
         options,
         market: ctx.accounts.market.key(),
-        depositor: ctx.accounts.depositor.key(),
-        withdraw_account: ctx.accounts.withdraw_account.key(),
-        short_note_account: ctx.accounts.short_note_account.key(),
+        holder: ctx.accounts.holder.key(),
+        redeem_account: ctx.accounts.redeem_account.key(),
         long_note_account: ctx.accounts.long_note_account.key(),
     });
 

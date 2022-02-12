@@ -32,4 +32,9 @@ pub mod anchor_options {
     pub fn burn(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
         instructions::burn::handler(ctx, options)
     }
+
+    /// Settles an option by recording the expiry price
+    pub fn settle(ctx: Context<SettleOption>) -> ProgramResult {
+        instructions::settle::handler(ctx)
+    }
 }

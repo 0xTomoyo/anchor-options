@@ -46,19 +46,18 @@ pub fn calculate_expired_value(
     collateral_decimals: u8,
     base_decimals: u8,
     pyth_exponent: i32,
-) -> (u64, bool) {
+) -> u64 {
     if is_put && (strike_price > expiry_price) {
         let decimals = (base_decimals as i32) + pyth_exponent - (collateral_decimals as i32);
         let payout = (strike_price - expiry_price) * options;
         if decimals >= 0 {
-            return (payout / (10 as u64).pow(decimals.abs() as u32), true);
+            return payout / (10 as u64).pow(decimals.abs() as u32);
         } else {
-            return (payout * (10 as u64).pow(decimals.abs() as u32), true);
+            return payout * (10 as u64).pow(decimals.abs() as u32);
         }
     } else if !is_put && (expiry_price > strike_price) {
-        let payout = ((expiry_price - strike_price) * options) / expiry_price;
-        return (payout, true);
+        return ((expiry_price - strike_price) * options) / expiry_price;
     } else {
-        return (0, false);
+        return 0;
     }
 }

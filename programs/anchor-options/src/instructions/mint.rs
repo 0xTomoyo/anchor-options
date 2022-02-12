@@ -12,6 +12,7 @@ use crate::state::*;
 pub struct MintEvent {
     market: Pubkey,
     depositor: Pubkey,
+    deposit_account: Pubkey,
     short_note_account: Pubkey,
     long_note_account: Pubkey,
     collateral: u64,
@@ -73,7 +74,7 @@ pub struct MintOptions<'info> {
     pub long_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account with the collateral to be deposited
-    pub deposit_source: Box<Account<'info, TokenAccount>>,
+    pub deposit_account: Box<Account<'info, TokenAccount>>,
 
     /// Signer
     pub depositor: Signer<'info>,
@@ -87,7 +88,7 @@ impl<'info> MintOptions<'info> {
         CpiContext::new(
             self.token_program.to_account_info(),
             Transfer {
-                from: self.deposit_source.to_account_info(),
+                from: self.deposit_account.to_account_info(),
                 to: self.vault.to_account_info(),
                 authority: self.depositor.to_account_info(),
             },
@@ -167,6 +168,7 @@ pub fn handler(ctx: Context<MintOptions>, collateral: u64) -> ProgramResult {
         options,
         market: ctx.accounts.market.key(),
         depositor: ctx.accounts.depositor.key(),
+        deposit_account: ctx.accounts.deposit_account.key(),
         short_note_account: ctx.accounts.short_note_account.key(),
         long_note_account: ctx.accounts.long_note_account.key(),
     });

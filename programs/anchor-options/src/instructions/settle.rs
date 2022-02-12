@@ -5,8 +5,8 @@ use crate::state::*;
 
 #[event]
 pub struct SettleEvent {
-    market: Pubkey,
-    expiry_price: u64,
+    pub market: Pubkey,
+    pub expiry_price: u64,
 }
 
 #[derive(Accounts)]
@@ -21,7 +21,7 @@ pub struct SettleOption<'info> {
     pub pyth_oracle_price: AccountInfo<'info>,
 }
 
-/// Settles an option account by recording the expiry price
+/// Settles an option by recording the expiry price
 pub fn handler(ctx: Context<SettleOption>) -> ProgramResult {
     if ctx.accounts.market.expiry_timestamp > Clock::get()?.unix_timestamp {
         return Err(ErrorCode::OptionNotExpired.into());
@@ -41,6 +41,10 @@ pub fn handler(ctx: Context<SettleOption>) -> ProgramResult {
         None => return Err(ErrorCode::PriceError.into()),
         Some(val) => val,
     };
+
+    if price.price < 0 {
+        return Err(ErrorCode::PriceError.into());
+    }
 
     ctx.accounts.market.expiry_price = price.price as u64;
 

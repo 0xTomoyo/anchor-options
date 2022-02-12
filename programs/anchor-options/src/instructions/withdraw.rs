@@ -5,23 +5,23 @@ use anchor_spl::{
 };
 
 use crate::errors::ErrorCode;
+use crate::instructions::settle::SettleEvent;
 use crate::math::*;
 use crate::state::*;
 
 #[event]
-pub struct BurnEvent {
+pub struct WithdrawEvent {
     market: Pubkey,
-    depositor: Pubkey,
+    holder: Pubkey,
     withdraw_account: Pubkey,
     short_note_account: Pubkey,
-    long_note_account: Pubkey,
     collateral: u64,
     options: u64,
 }
 
 #[derive(Accounts)]
 #[instruction(options: u64)]
-pub struct BurnOptions<'info> {
+pub struct WithdrawOptions<'info> {
     /// Option account
     pub market: Box<Account<'info, OptionMarket>>,
 
@@ -77,13 +77,13 @@ pub struct BurnOptions<'info> {
     pub withdraw_account: Box<Account<'info, TokenAccount>>,
 
     /// Signer
-    pub depositor: Signer<'info>,
+    pub holder: Signer<'info>,
 
     /// Token program
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> BurnOptions<'info> {
+impl<'info> WithdrawOptions<'info> {
     fn transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
@@ -105,23 +105,12 @@ impl<'info> BurnOptions<'info> {
             },
         )
     }
-
-    fn long_note_burn_context(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
-        CpiContext::new(
-            self.token_program.to_account_info(),
-            Burn {
-                to: self.long_note_account.to_account_info(),
-                mint: self.long_note_mint.to_account_info(),
-                authority: self.market_authority.to_account_info(),
-            },
-        )
-    }
 }
 
 /// Burn long and short options to withdraw collateral
-pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
-    if ctx.accounts.market.expiry_timestamp <= Clock::get()?.unix_timestamp {
-        return Err(ErrorCode::OptionExpired.into());
+pub fn handler(ctx: Context<WithdrawOptions>, options: u64) -> ProgramResult {
+    if ctx.accounts.market.expiry_timestamp > Clock::get()?.unix_timestamp {
+        return Err(ErrorCode::OptionNotExpired.into());
     }
 
     let oracle_data = ctx.accounts.pyth_oracle_price.try_borrow_data()?;
@@ -135,14 +124,33 @@ pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
         Some(val) => val,
     };
 
-    let collateral = calculate_collateral_amount(
+    if ctx.accounts.market.expiry_price != 0 {
+        if price.price < 0 {
+            return Err(ErrorCode::PriceError.into());
+        }
+
+        ctx.accounts.market.expiry_price = price.price as u64;
+
+        emit!(SettleEvent {
+            market: ctx.accounts.market.key(),
+            expiry_price: price.price as u64,
+        });
+    }
+
+    let payout = calculate_expired_value(
         options,
         ctx.accounts.market.strike_price,
+        ctx.accounts.market.expiry_price,
         ctx.accounts.market.is_put,
         ctx.accounts.collateral_mint.decimals,
         ctx.accounts.base_mint.decimals,
         price.expo,
     );
+
+    let total_collateral = ctx.accounts.vault.amount;
+    let total_options = ctx.accounts.short_note_mint.supply;
+
+    let collateral = ((options * total_collateral) / total_options) - payout;
 
     token::transfer(ctx.accounts.transfer_context(), collateral)?;
 
@@ -158,19 +166,13 @@ pub fn handler(ctx: Context<BurnOptions>, options: u64) -> ProgramResult {
         options,
     )?;
 
-    token::burn(
-        ctx.accounts.long_note_burn_context().with_signer(&[seeds]),
-        options,
-    )?;
-
-    emit!(BurnEvent {
+    emit!(WithdrawEvent {
         collateral,
         options,
         market: ctx.accounts.market.key(),
-        depositor: ctx.accounts.depositor.key(),
+        holder: ctx.accounts.holder.key(),
         withdraw_account: ctx.accounts.withdraw_account.key(),
         short_note_account: ctx.accounts.short_note_account.key(),
-        long_note_account: ctx.accounts.long_note_account.key(),
     });
 
     Ok(())
