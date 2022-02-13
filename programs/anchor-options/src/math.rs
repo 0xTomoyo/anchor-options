@@ -211,5 +211,137 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_expired_value() {}
+    fn test_calculate_expired_value() {
+        let payout = calculate_expired_value(
+            50_000000000,
+            100_00000000,
+            120_00000000,
+            false,
+            SOL_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 8_333333333);
+
+        let payout = calculate_expired_value(
+            50_000000000,
+            100_00000000,
+            80_00000000,
+            false,
+            SOL_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            50_000000000,
+            100_00000000,
+            120_00000000,
+            true,
+            USDC_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            50_000000000,
+            100_00000000,
+            80_00000000,
+            true,
+            USDC_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 1000000000);
+
+        let payout = calculate_expired_value(
+            10_000000,
+            2_00000000,
+            3_00000000,
+            false,
+            SRM_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 3_333333);
+
+        let payout = calculate_expired_value(
+            10_000000,
+            2_00000000,
+            1_00000000,
+            false,
+            SRM_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            10_000000,
+            2_00000000,
+            3_00000000,
+            true,
+            USDC_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            10_000000,
+            2_00000000,
+            1_00000000,
+            true,
+            USDC_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 10_000000);
+
+        let payout = calculate_expired_value(
+            10_00,
+            6_00000000,
+            7_00000000,
+            false,
+            TEST_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 1_42);
+
+        let payout = calculate_expired_value(
+            10_00,
+            6_00000000,
+            5_00000000,
+            false,
+            TEST_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            10_00,
+            6_00000000,
+            7_00000000,
+            true,
+            USDC_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 0);
+
+        let payout = calculate_expired_value(
+            10_00,
+            6_00000000,
+            5_00000000,
+            true,
+            USDC_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(payout, 10000000);
+    }
 }
