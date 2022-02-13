@@ -31,7 +31,7 @@ pub fn calculate_collateral_amount(
     pyth_exponent: i32,
 ) -> u64 {
     if is_put {
-        // colateral = options * strike
+        // collateral = options * strike
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
         let units = 10_u128.pow(decimals.abs() as u32);
         if decimals >= 0 {
