@@ -10,14 +10,14 @@ pub fn calculate_option_amount(
     if is_put {
         // options = collateral / strike
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
-        let units = (10 as u128).pow(decimals.abs() as u32);
+        let units = 10_u128.pow(decimals.abs() as u32);
         if decimals >= 0 {
-            return (((collateral as u128) * units) / (strike_price as u128)) as u64;
+            (((collateral as u128) * units) / (strike_price as u128)) as u64
         } else {
-            return (((collateral as u128) / (strike_price as u128)) / units) as u64;
+            (((collateral as u128) / (strike_price as u128)) / units) as u64
         }
     } else {
-        return collateral;
+        collateral
     }
 }
 
@@ -33,14 +33,14 @@ pub fn calculate_collateral_amount(
     if is_put {
         // colateral = options * strike
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
-        let units = (10 as u128).pow(decimals.abs() as u32);
+        let units = 10_u128.pow(decimals.abs() as u32);
         if decimals >= 0 {
-            return (((options as u128) * (strike_price as u128)) / units) as u64;
+            (((options as u128) * (strike_price as u128)) / units) as u64
         } else {
-            return (((options as u128) * units) / (strike_price as u128)) as u64;
+            (((options as u128) * units) / (strike_price as u128)) as u64
         }
     } else {
-        return options;
+        options
     }
 }
 
@@ -58,25 +58,25 @@ pub fn calculate_expired_value(
         // payout = (strike_price - expiry_price) * options
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
         let payout = ((strike_price - expiry_price) as u128) * (options as u128);
-        let units = (10 as u128).pow(decimals.abs() as u32);
+        let units = 10_u128.pow(decimals.abs() as u32);
         if decimals >= 0 {
-            return (payout / units) as u64;
+            (payout / units) as u64
         } else {
-            return (payout * units) as u64;
+            (payout * units) as u64
         }
     } else if !is_put && (expiry_price > strike_price) {
         // payout = ((expiry_price - strike_price) * options) / expiry_price
-        return (((expiry_price - strike_price) as u128) * (options as u128)
-            / (expiry_price as u128)) as u64;
+        (((expiry_price - strike_price) as u128) * (options as u128)
+            / (expiry_price as u128)) as u64
     } else {
-        return 0;
+        0
     }
 }
 
 /// Calculate the amount of underlying collateral for an option
 pub fn calculate_collateral(options: u64, total_collateral: u64, total_options: u64) -> u64 {
     // (options * total_collateral) / total_options
-    return (((options as u128) * (total_collateral as u128)) / (total_options as u128)) as u64;
+    (((options as u128) * (total_collateral as u128)) / (total_options as u128)) as u64
 }
 
 #[cfg(test)]
