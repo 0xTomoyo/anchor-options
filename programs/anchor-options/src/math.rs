@@ -8,6 +8,7 @@ pub fn calculate_option_amount(
     pyth_exponent: i32,
 ) -> u64 {
     if is_put {
+        // options = collateral / strike
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
         let units = (10 as u128).pow(decimals.abs() as u32);
         if decimals >= 0 {
@@ -30,6 +31,7 @@ pub fn calculate_collateral_amount(
     pyth_exponent: i32,
 ) -> u64 {
     if is_put {
+        // colateral = options * strike
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
         let units = (10 as u128).pow(decimals.abs() as u32);
         if decimals >= 0 {
@@ -53,15 +55,19 @@ pub fn calculate_expired_value(
     pyth_exponent: i32,
 ) -> u64 {
     if is_put && (strike_price > expiry_price) {
+        // payout = (strike_price - expiry_price) * options
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
-        let payout = (strike_price - expiry_price) * options;
+        let payout = ((strike_price - expiry_price) as u128) * (options as u128);
+        let units = (10 as u128).pow(decimals.abs() as u32);
         if decimals >= 0 {
-            return payout / (10 as u64).pow(decimals.abs() as u32);
+            return (payout / units) as u64;
         } else {
-            return payout * (10 as u64).pow(decimals.abs() as u32);
+            return (payout * units) as u64;
         }
     } else if !is_put && (expiry_price > strike_price) {
-        return ((expiry_price - strike_price) * options) / expiry_price;
+        // payout = ((expiry_price - strike_price) * options) / expiry_price
+        return (((expiry_price - strike_price) as u128) * (options as u128)
+            / (expiry_price as u128)) as u64;
     } else {
         return 0;
     }
