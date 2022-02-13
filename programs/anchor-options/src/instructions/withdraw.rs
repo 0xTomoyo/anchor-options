@@ -61,14 +61,17 @@ pub struct WithdrawCollateral<'info> {
     )]
     pub pyth_oracle_price: AccountInfo<'info>,
 
-    /// The token account to receive the short option notes
+    /// The token account to burn the short option notes
+    #[account(
+        constraint = short_note_account.owner == depositor.key()
+    )]
     pub short_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account where to transfer withdrawn collateral to
     pub withdraw_account: Box<Account<'info, TokenAccount>>,
 
     /// Signer
-    pub holder: Signer<'info>,
+    pub depositor: Signer<'info>,
 
     /// Token program
     pub token_program: Program<'info, Token>,
@@ -161,7 +164,7 @@ pub fn handler(ctx: Context<WithdrawCollateral>, options: u64) -> ProgramResult 
         collateral,
         options,
         market: ctx.accounts.market.key(),
-        holder: ctx.accounts.holder.key(),
+        holder: ctx.accounts.depositor.key(),
         withdraw_account: ctx.accounts.withdraw_account.key(),
         short_note_account: ctx.accounts.short_note_account.key(),
     });

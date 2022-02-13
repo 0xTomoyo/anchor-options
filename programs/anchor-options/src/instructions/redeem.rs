@@ -61,7 +61,10 @@ pub struct RedeemOptions<'info> {
     )]
     pub pyth_oracle_price: AccountInfo<'info>,
 
-    /// The token account to receive the long option notes
+    /// The token account to burn the long option notes
+    #[account(
+        constraint = long_note_account.owner == holder.key()
+    )]
     pub long_note_account: Box<Account<'info, TokenAccount>>,
 
     /// The token account where to transfer withdrawn collateral to
