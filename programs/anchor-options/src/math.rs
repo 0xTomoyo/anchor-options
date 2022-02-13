@@ -84,10 +84,6 @@ mod tests {
 
     const PYTH_USD_EXPONENT: i32 = -8;
 
-    const SOL_PRICE: u64 = 95_67553600;
-    const SRM_PRICE: u64 = 2_27358175;
-    const TEST_PRICE: u64 = 5_00000000;
-
     #[test]
     fn test_calculate_option_amount() {
         let options = calculate_option_amount(
@@ -153,7 +149,7 @@ mod tests {
 
     #[test]
     fn test_calculate_collateral_amount() {
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             50_000000000,
             100_00000000,
             false,
@@ -161,9 +157,9 @@ mod tests {
             SOL_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 50_000000000);
+        assert_eq!(collateral, 50_000000000);
 
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             50_000000000,
             100_00000000,
             true,
@@ -171,9 +167,9 @@ mod tests {
             SOL_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 5000_000000);
+        assert_eq!(collateral, 5000_000000);
 
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             10_000000,
             2_00000000,
             false,
@@ -181,9 +177,9 @@ mod tests {
             SRM_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 10_000000);
+        assert_eq!(collateral, 10_000000);
 
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             10_000000,
             2_00000000,
             true,
@@ -191,9 +187,9 @@ mod tests {
             SRM_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 20_000000);
+        assert_eq!(collateral, 20_000000);
 
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             10_00,
             6_00000000,
             false,
@@ -201,9 +197,9 @@ mod tests {
             TEST_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 10_00);
+        assert_eq!(collateral, 10_00);
 
-        let options = calculate_collateral_amount(
+        let collateral = calculate_collateral_amount(
             10_00,
             6_00000000,
             true,
@@ -211,6 +207,9 @@ mod tests {
             TEST_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(options, 60_000000);
+        assert_eq!(collateral, 60_000000);
     }
+
+    #[test]
+    fn test_calculate_expired_value() {}
 }
