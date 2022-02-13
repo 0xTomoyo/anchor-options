@@ -1,4 +1,4 @@
-// Calculate the amount of options mintable given the margin
+/// Calculate the amount of options mintable given the margin
 pub fn calculate_option_amount(
     collateral: u64,
     strike_price: u64,
@@ -21,7 +21,7 @@ pub fn calculate_option_amount(
     }
 }
 
-// Calculate the amount of margin required to mint options
+/// Calculate the amount of margin required to mint options
 pub fn calculate_collateral_amount(
     options: u64,
     strike_price: u64,
@@ -44,7 +44,7 @@ pub fn calculate_collateral_amount(
     }
 }
 
-// Calculate the payout of an expired option
+/// Calculate the payout of an expired option
 pub fn calculate_expired_value(
     options: u64,
     strike_price: u64,
@@ -71,6 +71,12 @@ pub fn calculate_expired_value(
     } else {
         return 0;
     }
+}
+
+/// Calculate the amount of underlying collateral for an option
+pub fn calculate_collateral(options: u64, total_collateral: u64, total_options: u64) -> u64 {
+    // (options * total_collateral) / total_options
+    return (((options as u128) * (total_collateral as u128)) / (total_options as u128)) as u64;
 }
 
 #[cfg(test)]
@@ -343,5 +349,20 @@ mod tests {
             PYTH_USD_EXPONENT,
         );
         assert_eq!(payout, 10_000000);
+    }
+
+    #[test]
+    fn test_calculate_collateral() {
+        let collateral = calculate_collateral(10_000000000, 10_000000000, 10_000000000);
+        assert_eq!(collateral, 10_000000000);
+
+        let collateral = calculate_collateral(5_000000000, 10_000000000, 10_000000000);
+        assert_eq!(collateral, 5_000000000);
+
+        let collateral = calculate_collateral(10_000000000, 6_000000000, 10_000000000);
+        assert_eq!(collateral, 6_000000000);
+
+        let collateral = calculate_collateral(5_000000000, 6_000000000, 10_000000000);
+        assert_eq!(collateral, 3_000000000);
     }
 }

@@ -144,7 +144,7 @@ pub fn handler(ctx: Context<WithdrawCollateral>, options: u64) -> ProgramResult 
     let total_collateral = ctx.accounts.vault.amount;
     let total_options = ctx.accounts.short_note_mint.supply;
 
-    let collateral = ((options * total_collateral) / total_options) - payout;
+    let collateral = calculate_collateral(options, total_collateral, total_options) - payout;
 
     token::transfer(ctx.accounts.transfer_context(), collateral)?;
 
