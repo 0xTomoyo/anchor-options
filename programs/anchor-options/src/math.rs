@@ -66,8 +66,8 @@ pub fn calculate_expired_value(
         }
     } else if !is_put && (expiry_price > strike_price) {
         // payout = ((expiry_price - strike_price) * options) / expiry_price
-        (((expiry_price - strike_price) as u128) * (options as u128)
-            / (expiry_price as u128)) as u64
+        (((expiry_price - strike_price) as u128) * (options as u128) / (expiry_price as u128))
+            as u64
     } else {
         0
     }
