@@ -254,7 +254,7 @@ mod tests {
             SOL_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(payout, 1000000000);
+        assert_eq!(payout, 1000_000000);
 
         let payout = calculate_expired_value(
             10_000000,
@@ -342,6 +342,6 @@ mod tests {
             TEST_DECIMALS,
             PYTH_USD_EXPONENT,
         );
-        assert_eq!(payout, 10000000);
+        assert_eq!(payout, 10_000000);
     }
 }
