@@ -31,10 +31,11 @@ pub fn calculate_collateral_amount(
 ) -> u64 {
     if is_put {
         let decimals = (base_decimals as i32) + pyth_exponent.abs() - (collateral_decimals as i32);
+        let units = (10 as u128).pow(decimals.abs() as u32);
         if decimals >= 0 {
-            return (options * strike_price) / (10 as u64).pow(decimals.abs() as u32);
+            return (((options as u128) * (strike_price as u128)) / units) as u64;
         } else {
-            return (options * (10 as u64).pow(decimals.abs() as u32)) / strike_price;
+            return (((options as u128) * units) / (strike_price as u128)) as u64;
         }
     } else {
         return options;
@@ -142,5 +143,68 @@ mod tests {
             PYTH_USD_EXPONENT,
         );
         assert_eq!(options, 10_00);
+    }
+
+    #[test]
+    fn test_calculate_collateral_amount() {
+        let options = calculate_collateral_amount(
+            50_000000000,
+            100_00000000,
+            false,
+            SOL_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 50_000000000);
+
+        let options = calculate_collateral_amount(
+            50_000000000,
+            100_00000000,
+            true,
+            USDC_DECIMALS,
+            SOL_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 5000_000000);
+
+        let options = calculate_collateral_amount(
+            10_000000,
+            2_00000000,
+            false,
+            SRM_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 10_000000);
+
+        let options = calculate_collateral_amount(
+            10_000000,
+            2_00000000,
+            true,
+            USDC_DECIMALS,
+            SRM_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 20_000000);
+
+        let options = calculate_collateral_amount(
+            10_00,
+            6_00000000,
+            false,
+            TEST_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 10_00);
+
+        let options = calculate_collateral_amount(
+            10_00,
+            6_00000000,
+            true,
+            USDC_DECIMALS,
+            TEST_DECIMALS,
+            PYTH_USD_EXPONENT,
+        );
+        assert_eq!(options, 60_000000);
     }
 }
