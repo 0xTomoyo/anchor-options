@@ -118,7 +118,7 @@ pub fn handler(ctx: Context<WithdrawCollateral>, options: u64) -> ProgramResult 
         Some(val) => val,
     };
 
-    if ctx.accounts.market.expiry_price != 0 {
+    if ctx.accounts.market.expiry_price == 0 {
         if price.price < 0 {
             return Err(ErrorCode::PriceError.into());
         }
