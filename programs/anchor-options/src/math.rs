@@ -75,7 +75,7 @@ pub fn calculate_expired_value(
 
 /// Calculate the amount of underlying collateral for an option
 pub fn calculate_collateral(options: u64, total_collateral: u64, total_options: u64) -> u64 {
-    // (options * total_collateral) / total_options
+    // collateral = (options * total_collateral) / total_options
     (((options as u128) * (total_collateral as u128)) / (total_options as u128)) as u64
 }
 
